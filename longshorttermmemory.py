@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import os
 import glob
+import joblib
 
 data_path_folder = r'C:.\highD\data'
 search_pattern = os.path.join(data_path_folder, '*_tracks.csv')
@@ -48,10 +49,11 @@ def lstm_data(df, window_size=25):
                 X_list.append(feature_data[i:i + window_size])
                 y_list.append(target_data[i + window_size])
 
-    return np.array(X_list), np.array(y_list)
+    return np.array(X_list), np.array(y_list), scaler
 
-X_final, y_final = lstm_data(df)
+X_final, y_final, my_scaler = lstm_data(df)
 
+joblib.dump(my_scaler, 'lstm_scaler.pkl')
 
 X_train_t = torch.tensor(X_final, dtype=torch.float32)
 y_train_t = torch.tensor(y_final, dtype=torch.float32).view(-1, 1)
@@ -72,7 +74,7 @@ model = TTC_LSTM(input_size=8, hidden_size=64, num_layers=2)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 10
+epochs = 20
 batch_size = 64
 
 train_data = torch.utils.data.TensorDataset(X_train_t, y_train_t)
@@ -92,6 +94,9 @@ for epoch in range(epochs):
         epoch_loss += loss.item()
 
     print(f'Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss / len(train_loader):.4f}')
+
+model_path = 'ttc_lstm_model.pth'
+torch.save(model.state_dict(), model_path)
 
 model.eval()
 with torch.no_grad():
