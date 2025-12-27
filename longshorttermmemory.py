@@ -3,7 +3,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
 import os
 import glob
 import joblib
@@ -27,12 +26,12 @@ for file_path in all_files:
 
 df = pd.concat(all_dfs, ignore_index=True)
 
+scaler = StandardScaler()
 
-def lstm_data(df, window_size=25):
+def lstm_data(df, window_size=25, scaler=scaler):
     features = ['dhw', 'xVelocity', 'yVelocity', 'width', 'height', 'precedingXVelocity', 'xAcceleration', 'yAcceleration']
     target = 'ttc'
 
-    scaler = StandardScaler()
     df[features] = scaler.fit_transform(df[features])
 
     X_list, y_list = [], []
@@ -49,11 +48,11 @@ def lstm_data(df, window_size=25):
                 X_list.append(feature_data[i:i + window_size])
                 y_list.append(target_data[i + window_size])
 
-    return np.array(X_list), np.array(y_list), scaler
+    return np.array(X_list), np.array(y_list)
 
-X_final, y_final, my_scaler = lstm_data(df)
+X_final, y_final = lstm_data(df)
 
-joblib.dump(my_scaler, 'lstm_scaler.pkl')
+joblib.dump(scaler, 'lstm_scaler.pkl')
 
 X_train_t = torch.tensor(X_final, dtype=torch.float32)
 y_train_t = torch.tensor(y_final, dtype=torch.float32).view(-1, 1)
@@ -68,53 +67,34 @@ class TTC_LSTM(nn.Module):
         out, _ = self.lstm(x)
         out = self.fc(out[:, -1, :])
         return out
+    
+if __name__ == "__main__":
 
-model = TTC_LSTM(input_size=8, hidden_size=64, num_layers=2)
+    model = TTC_LSTM(input_size=8, hidden_size=64, num_layers=2)
 
-criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 20
-batch_size = 64
+    epochs = 20
+    batch_size = 64
 
-train_data = torch.utils.data.TensorDataset(X_train_t, y_train_t)
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    train_data = torch.utils.data.TensorDataset(X_train_t, y_train_t)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
 
-model.train()
-for epoch in range(epochs):
-    epoch_loss = 0
-    for batch_X, batch_y in train_loader:
-        outputs = model(batch_X)
-        loss = criterion(outputs, batch_y)
+    model.train()
+    for epoch in range(epochs):
+        epoch_loss = 0
+        for batch_X, batch_y in train_loader:
+            outputs = model(batch_X)
+            loss = criterion(outputs, batch_y)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        epoch_loss += loss.item()
+            epoch_loss += loss.item()
 
-    print(f'Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss / len(train_loader):.4f}')
+        print(f'Epoch [{epoch + 1}/{epochs}], Loss: {epoch_loss / len(train_loader):.4f}')
 
-model_path = 'ttc_lstm_model.pth'
-torch.save(model.state_dict(), model_path)
-
-model.eval()
-with torch.no_grad():
-
-    test_range = range(500, 800)
-    sample_inputs = X_train_t[test_range]
-    predictions = model(sample_inputs).numpy()
-    actuals = y_train_t[test_range].numpy()
-
-plt.figure(figsize=(12, 6))
-
-plt.plot(actuals, label='Tatsächliche TTC (Ground Truth)', color='blue', linewidth=2)
-plt.plot(predictions, label='LSTM Vorhersage', color='orange', linestyle='--')
-plt.axhline(y=2.0, color='red', linestyle=':', label='Kritischer Schwellenwert (2.0s)')
-
-plt.title('LSTM Zeitreihen_Vorhersage: TTC über Frames')
-plt.xlabel('Zeitverlauf (Frames)')
-plt.ylabel('Time-to-Collision (s)')
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
+    model_path = 'ttc_lstm_model.pth'
+    torch.save(model.state_dict(), model_path)
