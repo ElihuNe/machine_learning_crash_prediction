@@ -55,6 +55,8 @@ print(f"RMSE: {rmse:.4f}")
 print(f"Korrelation: {correlation:.4f}")
 #print(f"Standardabweichung (Fehler): {std_dev:.4f}")
 
+limit = 1000
+
 plt.figure(figsize=(12, 6))
 
 plt.plot(actuals, label='Tatsächliche TTC (Ground Truth)', color='blue', linewidth=2)
@@ -65,5 +67,6 @@ plt.xlabel('Zeitverlauf (Frames)')
 plt.ylabel('Time-to-Collision (s)')
 plt.legend()
 plt.grid(True, alpha=0.3)
+plt.xlim(0, limit)
 
 plt.show()
