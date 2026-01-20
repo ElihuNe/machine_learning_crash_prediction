@@ -35,7 +35,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 
 save_split.save_processed_split(X_train, X_test, Y_train, Y_test, None, 'data/random_forest')
 
-model = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+model = RandomForestRegressor(n_estimators=100, max_depth=None, min_samples_leaf=5, random_state=42)
 
 model.fit(X_train, Y_train)
 

@@ -29,7 +29,7 @@ df = pd.concat(all_dfs, ignore_index=True)
 
 features = ['dhw', 'xVelocity', 'yVelocity', 'width', 'height', 'precedingXVelocity', 'xAcceleration', 'yAcceleration']
 
-df['is_critical'] = (df['ttc'] < 2).astype(int)
+df['is_critical'] = (df['ttc'] <= 2).astype(int)
 
 X = df[features]
 Y = df['is_critical']
@@ -43,7 +43,7 @@ X_test = scaler.transform(X_test)
 
 save_split.save_processed_split(X_train, X_test, Y_train, Y_test, scaler, 'data/logistic_regression')
 
-model = LogisticRegression(class_weight='balanced', random_state=42)
+model = LogisticRegression(class_weight={0: 1, 1: 11}, random_state=42)
 model.fit(X_train, Y_train)
 
 Y_pred = model.predict(X_test)

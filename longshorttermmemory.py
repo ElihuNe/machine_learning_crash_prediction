@@ -67,8 +67,8 @@ if __name__ == "__main__":
     df = pd.concat(all_dfs, ignore_index=True)
 
     #EMA glättung von bestimmten features
-    df['xAcceleration'] = df.groupby('id')['xAcceleration'].transform(lambda x: x.ewm(span=5, adjust=False).mean())
-    df['yAcceleration'] = df.groupby('id')['yAcceleration'].transform(lambda x: x.ewm(span=5, adjust=False).mean())
+    #df['xAcceleration'] = df.groupby('id')['xAcceleration'].transform(lambda x: x.ewm(span=5, adjust=False).mean())
+    #df['yAcceleration'] = df.groupby('id')['yAcceleration'].transform(lambda x: x.ewm(span=5, adjust=False).mean())
 
     scaler = StandardScaler()
 

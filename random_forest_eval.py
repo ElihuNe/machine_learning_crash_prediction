@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import joblib
-from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score, r2_score, mean_squared_error)
+from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score, r2_score, mean_squared_error, confusion_matrix, ConfusionMatrixDisplay)
 import numpy as np
 import pandas as pd
 import utils.save_split as save_split
@@ -31,6 +31,9 @@ rmse = np.sqrt(mse)
 correlation = np.corrcoef(Y.flatten(), Y_pred.flatten())[0, 1]
 std_dev = np.std(Y - Y_pred) # Standardabweichung der Fehler
 
+metrics_vals = [accuracy, precision, recall, f1, mse, rmse, correlation, std_dev]
+metrics_names = [f"Accuracy\n{accuracy:.4f}", f"Precision\n{precision:.4f}", f"Recall\n{recall:.4f}", f"F1-Score\n{f1:.4f}", f"MSE\n{mse:.4f}", f"RMSE\n{rmse:.4f}", f"Korrelation\n{correlation:.4f}", f"Standardabweichung\n{std_dev:.4f}"]
+
 print("--- Ergebnisse vom Random Forest ---")
 print(f"Accuracy: {accuracy:.4f}")
 print(f"Precision: {precision:.4f} (Vermeidung von Fehlalarmen)")
@@ -46,6 +49,7 @@ importances = model.feature_importances_
 indices = np.argsort(importances)[::-1]
 limit = 1000
 
+# Vergleichs plot
 plt.figure(figsize=(12, 6))
 plt.plot(Y, label='Tatsächliche TTC (Ground Truth)', color='blue', linewidth=2)
 plt.plot(Y_pred, label= 'Random forest vorhersage', color='orange', linestyle='--')
@@ -57,11 +61,24 @@ plt.legend()
 plt.grid(True, alpha=0.3)
 plt.xlim(0, limit)
 
+# feature importance
 plt.figure(figsize=(10, 6))
 plt.title('Welche Faktoren beinflussen die Unfallwahrscheinlichkeit (TTC)?')
 plt.bar(range(X.shape[1]), importances[indices], align='center', color='skyblue')
 plt.xticks(range(X.shape[1]), [feature_names[i] for i in indices], rotation=45)
 plt.ylabel('Wichtigkeit (Gini Importance)')
 plt.tight_layout()
+
+# Statistische Metiken Balken diagramm
+plt.figure(figsize=(12, 6))
+plt.bar(metrics_names, metrics_vals)
+plt.title("Ergebnisse vom Random Forest")
+plt.xlabel("Metriken")
+plt.grid(True, alpha=0.5)
+
+# Confusion Matrix
+con = confusion_matrix(y_true_cls, y_pred_cls)
+cm_plot = ConfusionMatrixDisplay(con, display_labels=[0,1])
+cm_plot.plot()
 
 plt.show()
